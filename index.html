@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Galaxian: Phoenix Project</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,6 +48,7 @@
             flex-direction: column;
             justify-content: space-between;
             padding: 20px;
+            padding-bottom: 140px; /* Space for touch controls */
             box-sizing: border-box;
         }
         #top-ui {
@@ -85,6 +86,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
         }
         #game-overlay h1 {
             font-size: 4em;
@@ -118,11 +121,75 @@
             box-shadow: 0 0 25px #0ff, 0 0 40px #0f0;
         }
 
+        #touch-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .touch-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        #touch-controls button {
+            pointer-events: all;
+            width: 80px;
+            height: 80px;
+            font-size: 2.5em;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            background-color: rgba(0, 255, 255, 0.15);
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.1s;
+        }
+
+        #touch-controls button#touch-special {
+             font-size: 1em;
+        }
+
+        #touch-controls button:active {
+            background-color: rgba(0, 255, 255, 0.4);
+        }
+
         @keyframes pulse {
             0% { transform: scale(1); opacity: 0.8; }
             50% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 0.8; }
         }
+
+        @media (max-width: 600px) {
+            #top-ui, #bottom-ui {
+                font-size: 1em;
+            }
+            #game-overlay h1 {
+                font-size: 3em;
+            }
+            #game-overlay h2 {
+                font-size: 1.2em;
+            }
+            #game-overlay p {
+                font-size: 1em;
+            }
+             #touch-controls button {
+                width: 70px;
+                height: 70px;
+             }
+        }
+
     </style>
 </head>
 <body>
@@ -143,8 +210,17 @@
         <div id="game-overlay">
             <h1>GALAXIAN</h1>
             <h2>PHOENIX PROJECT</h2>
-            <p>Ваша миссия: в одиночку отразить вторжение армады К'Тар. Используйте клавиши со стрелками [←] [→] для перемещения. Корабль ведет огонь автоматически. Клавиша [SHIFT] активирует специальную атаку - тройной залп. Вы - последняя надежда человечества.</p>
+            <p>Ваша миссия: в одиночку отразить вторжение армады К'Тар. Используйте [←] [→] или сенсорные кнопки для перемещения. Корабль ведет огонь автоматически. Клавиша [SHIFT] или кнопка TRIPLE активирует тройной залп.</p>
             <button id="start-button">НАЧАТЬ МИССИЮ</button>
+        </div>
+        <div id="touch-controls" style="display: none;">
+            <div class="touch-group">
+                <button id="touch-left">←</button>
+                <button id="touch-right">→</button>
+            </div>
+            <div class="touch-group">
+                <button id="touch-special">TRIPLE</button>
+            </div>
         </div>
     </div>
 
@@ -158,6 +234,12 @@
     const livesDisplayEl = document.getElementById('lives-display');
     const shieldValueEl = document.getElementById('shield-value');
     const tripleShotTimerEl = document.getElementById('triple-shot-timer');
+
+    // Touch Controls Elements
+    const touchControls = document.getElementById('touch-controls');
+    const touchLeft = document.getElementById('touch-left');
+    const touchRight = document.getElementById('touch-right');
+    const touchSpecial = document.getElementById('touch-special');
 
     let gameStarted = false;
     let score = 0;
@@ -608,6 +690,7 @@
 
     function gameOver() {
         gameStarted = false;
+        touchControls.style.display = 'none';
         gameOverlay.style.display = 'flex';
         gameOverlay.querySelector('h1').textContent = 'МИССИЯ ПРОВАЛЕНА';
         gameOverlay.querySelector('h2').textContent = `ИТОГОВЫЙ СЧЕТ: ${score}`;
@@ -752,6 +835,25 @@
         requestAnimationFrame(gameLoop);
     }
     
+    function setupTouchControls() {
+        const handleEnd = (e, key) => {
+            e.preventDefault();
+            keys[key] = false;
+        };
+
+        touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; }, { passive: false });
+        touchLeft.addEventListener('touchend', (e) => handleEnd(e, 'ArrowLeft'), { passive: false });
+        touchLeft.addEventListener('touchcancel', (e) => handleEnd(e, 'ArrowLeft'), { passive: false });
+
+        touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowRight'] = true; }, { passive: false });
+        touchRight.addEventListener('touchend', (e) => handleEnd(e, 'ArrowRight'), { passive: false });
+        touchRight.addEventListener('touchcancel', (e) => handleEnd(e, 'ArrowRight'), { passive: false });
+
+        touchSpecial.addEventListener('touchstart', (e) => { e.preventDefault(); keys['Shift'] = true; }, { passive: false });
+        touchSpecial.addEventListener('touchend', (e) => handleEnd(e, 'Shift'), { passive: false });
+        touchSpecial.addEventListener('touchcancel', (e) => handleEnd(e, 'Shift'), { passive: false });
+    }
+    
     // Event Listeners
     window.addEventListener('keydown', (e) => keys[e.key] = true);
     window.addEventListener('keyup', (e) => keys[e.key] = false);
@@ -759,6 +861,9 @@
     
     startButton.addEventListener('click', () => {
         gameOverlay.style.display = 'none';
+        if ('ontouchstart' in window) {
+            touchControls.style.display = 'flex';
+        }
         init();
         if (!gameStarted) {
             gameStarted = true;
@@ -768,7 +873,9 @@
     
     // Initial setup
     resizeCanvas();
+    setupTouchControls();
     </script>
 </body>
 </html>
+
 
