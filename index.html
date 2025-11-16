@@ -252,7 +252,7 @@
     let enemyGridWidth = 10;
     let enemyGridHeight = 5;
     let formationDirection = 1;
-    let formationSpeed = 0.1; // Slower formation speed
+    let formationSpeed = 0.2; // 4) Увеличена начальная скорость
     let formationDrop = 10;
     let baseFormationX = 0;
     let timeSinceLastDive = 0;
@@ -263,21 +263,24 @@
     let screenShakeDuration = 0;
 
     function resizeCanvas() {
-        const aspectRatio = 4 / 3;
+        // 1) Сделать игру на полный экран (растягивание)
         const container = document.getElementById('game-container');
         let newWidth = container.clientWidth;
         let newHeight = container.clientHeight;
         
+        /* // Удаляем логику сохранения пропорций 4:3
+        const aspectRatio = 4 / 3;
         if (newWidth / newHeight > aspectRatio) {
             newWidth = newHeight * aspectRatio;
         } else {
             newHeight = newWidth / aspectRatio;
         }
+        */
 
-        canvas.width = 800; // Fixed internal resolution
+        canvas.width = 800; // Внутреннее разрешение остается 800x600
         canvas.height = 600;
-        canvas.style.width = `${newWidth}px`;
-        canvas.style.height = `${newHeight}px`;
+        canvas.style.width = `${newWidth}px`; // Растягиваем на всю ширину
+        canvas.style.height = `${newHeight}px`; // Растягиваем на всю высоту
     }
 
     // --- Utility Classes ---
@@ -469,7 +472,7 @@
             this.state = 'formation'; // 'formation', 'diving', 'returning'
             this.diveTarget = null;
             this.returnPoint = null;
-            this.diveSpeed = 2 + Math.random() * 1; // Slower dive speed
+            this.diveSpeed = 3 + Math.random() * 2; // 4) Увеличена скорость пикирования (было 2 + Math.random() * 1)
             
             switch(type) {
                 case 'grunt':
@@ -611,15 +614,52 @@
             });
         }
         
-        createEnemyFormation();
+        createEnemyFormation(wave); // 2) Передаем текущую волну
         updateUI();
     }
 
-    function createEnemyFormation() {
+    function createEnemyFormation(currentWave) { // 2) Принимаем номер волны
         enemies = [];
-        const types = ['grunt', 'grunt', 'grunt', 'elite', 'commander'];
-        const enemySpacingX = 50;
-        const enemySpacingY = 40;
+        let types = [];
+        let enemySpacingX = 50;
+        let enemySpacingY = 40;
+        
+        // 2) Определяем тип волны
+        const waveType = (currentWave - 1) % 4; // 4 разных типа волн
+
+        switch (waveType) {
+            case 0: // Стандартная волна
+                types = ['grunt', 'grunt', 'grunt', 'elite', 'commander'];
+                enemyGridWidth = 10;
+                enemyGridHeight = 5;
+                break;
+            case 1: // Волна "Элиты" (реже, но сильнее)
+                types = ['elite', 'elite', 'grunt', 'elite', 'commander'];
+                enemyGridWidth = 8;
+                enemyGridHeight = 4;
+                enemySpacingX = 60;
+                break;
+            case 2: // Плотная волна "Пехоты" (больше врагов, ближе друг к другу)
+                types = ['grunt', 'grunt', 'grunt', 'grunt', 'elite'];
+                enemyGridWidth = 12;
+                enemyGridHeight = 5;
+                enemySpacingX = 40;
+                enemySpacingY = 35;
+                break;
+            case 3: // Волна "Командиров" (мало, но опасно)
+                types = ['commander', 'elite', 'grunt', 'elite', 'commander'];
+                enemyGridWidth = 10;
+                enemyGridHeight = 3;
+                enemySpacingY = 50;
+                break;
+            default: // На всякий случай
+                types = ['grunt', 'grunt', 'grunt', 'elite', 'commander'];
+                enemyGridWidth = 10;
+                enemyGridHeight = 5;
+                break;
+        }
+
+
         const formationWidth = enemyGridWidth * enemySpacingX;
         baseFormationX = (canvas.width - formationWidth) / 2;
 
@@ -683,8 +723,8 @@
     function nextWave() {
         wave++;
         diveInterval *= 0.9; // Enemies dive faster
-        formationSpeed *= 1.1; // Formation moves faster
-        createEnemyFormation();
+        formationSpeed *= 1.15; // 4) Увеличено скалирование скорости (было 1.1)
+        createEnemyFormation(wave); // 2) Передаем новую волну
         updateUI();
     }
 
@@ -877,5 +917,4 @@
     </script>
 </body>
 </html>
-
 
